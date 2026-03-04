@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContentType {
+  VIDEO
+  IMAGE
+  EDITING
+  DEV
+  THREE_D
+  ARTICLE
+  PUBLICATION
+  OTHER
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+  FILE
+}
+
+model AdminUser {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  lastLoginAt  DateTime?
+}
+
+model MediaAsset {
+  id           String         @id @default(uuid())
+  kind         MediaKind
+  path         String
+  originalName String
+  mime         String
+  size         Int
+  width        Int?
+  height       Int?
+  duration     Int?
+  createdAt    DateTime       @default(now())
+  usedAsCover  ContentItem[]  @relation("CoverMedia")
+  galleryItems ContentMedia[]
+}
+
+model ContentItem {
+  id              String             @id @default(uuid())
+  type            ContentType
+  title           String
+  slug            String             @unique
+  summary         String?
+  content         String?
+  status          ContentStatus      @default(DRAFT)
+  featured        Boolean            @default(false)
+  year            Int?
+  seoTitle        String?
+  seoDescription  String?
+  seoKeywords     String?
+  coverMediaId    String?
+  coverMedia      MediaAsset?        @relation("CoverMedia", fields: [coverMediaId], references: [id])
+  gallery         ContentMedia[]
+  tags            ContentTag[]
+  videoDetails    VideoDetails?
+  devDetails      DevDetails?
+  threeDDetails   ThreeDDetails?
+  articleDetails  ArticleDetails?
+  publicationDetails PublicationDetails?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  publishedAt     DateTime?
+}
+
+model ContentMedia {
+  id        String      @id @default(uuid())
+  contentId String
+  mediaId   String
+  position  Int         @default(0)
+  content   ContentItem @relation(fields: [contentId], references: [id])
+  media     MediaAsset  @relation(fields: [mediaId], references: [id])
+
+  @@unique([contentId, mediaId])
+  @@index([contentId])
+  @@index([mediaId])
+}
+
+model Tag {
+  id    String       @id @default(uuid())
+  name  String
+  slug  String       @unique
+  items ContentTag[]
+}
+
+model ContentTag {
+  id        String      @id @default(uuid())
+  contentId String
+  tagId     String
+  content   ContentItem @relation(fields: [contentId], references: [id])
+  tag       Tag         @relation(fields: [tagId], references: [id])
+
+  @@unique([contentId, tagId])
+  @@index([tagId])
+}
+
+model VideoDetails {
+  id         String   @id @default(uuid())
+  contentId  String   @unique
+  youtubeUrl String?
+  vimeoUrl   String?
+  duration   Int?
+  role       String?
+  content    ContentItem @relation(fields: [contentId], references: [id])
+}
+
+model DevDetails {
+  id        String   @id @default(uuid())
+  contentId String   @unique
+  repoUrl   String?
+  liveUrl   String?
+  stack     String?
+  highlights String?
+  content   ContentItem @relation(fields: [contentId], references: [id])
+}
+
+model ThreeDDetails {
+  id        String   @id @default(uuid())
+  contentId String   @unique
+  software  String?
+  engine    String?
+  renderUrl String?
+  content   ContentItem @relation(fields: [contentId], references: [id])
+}
+
+model ArticleDetails {
+  id           String   @id @default(uuid())
+  contentId    String   @unique
+  readingTime  Int?
+  canonicalUrl String?
+  content      ContentItem @relation(fields: [contentId], references: [id])
+}
+
+model PublicationDetails {
+  id        String   @id @default(uuid())
+  contentId String   @unique
+  platform  String?
+  postUrl   String?
+  content   ContentItem @relation(fields: [contentId], references: [id])
+}
+
+model SiteSettings {
+  id           Int      @id @default(autoincrement())
+  siteTitle    String   @default("Meu Portfolio")
+  heroTitle    String?  
+  heroSubtitle String?
+  contactEmail String?
+  updatedAt    DateTime @updatedAt
+}

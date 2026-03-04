@@ -1,0 +1,15 @@
+{
+  "name": "portf-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @portf/web & npm run start:dev -w @portf/api",
+    "build": "npm run build -w @portf/web && npm run build -w @portf/api",
+    "lint": "npm run lint -w @portf/web && npm run lint -w @portf/api",
+    "prisma:generate": "npm run prisma:generate -w @portf/api",
+    "prisma:migrate": "npm run prisma:migrate -w @portf/api",
+    "prisma:seed": "npm run prisma:seed -w @portf/api"
+  }
+}

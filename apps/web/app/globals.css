@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-[#060816] text-white font-body antialiased;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.06) 1px, transparent 1px),
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 28%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 22%),
+    linear-gradient(180deg, rgba(6, 8, 22, 1), rgba(9, 14, 28, 1));
+  background-size: 48px 48px, 48px 48px, auto, auto, auto;
+  background-attachment: fixed;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.03), transparent 16%),
+    radial-gradient(circle at 80% 10%, rgba(56, 189, 248, 0.05), transparent 18%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+a {
+  @apply text-sand-2 transition-colors hover:text-accent;
+}
+
+.container {
+  @apply mx-auto max-w-7xl px-6;
+}
+
+.section-title {
+  @apply font-display text-4xl font-semibold tracking-tight text-white md:text-5xl;
+}
+
+.section-subtitle {
+  @apply mt-3 max-w-3xl text-base leading-8 text-slate;
+}
+
+.panel {
+  @apply rounded-2xl border border-white/10 bg-white/[0.03] shadow-soft backdrop-blur-sm;
+}
+
+.panel-muted {
+  @apply rounded-2xl border border-white/10 bg-white/[0.02];
+}
+
+.eyebrow {
+  @apply font-mono text-[11px] uppercase tracking-[0.35em] text-slate;
+}
+
+.markdown {
+  @apply text-slate;
+}
+
+.markdown h1 {
+  @apply mt-8 font-display text-4xl text-white;
+}
+
+.markdown h2 {
+  @apply mt-8 border-t border-white/10 pt-6 font-display text-2xl text-white;
+}
+
+.markdown h3 {
+  @apply mt-6 font-display text-xl text-white;
+}
+
+.markdown p {
+  @apply mt-4 text-[15px] leading-8 text-slate;
+}
+
+.markdown ul {
+  @apply mt-4 list-disc space-y-2 pl-6 text-[15px] leading-8 text-slate;
+}
+
+.markdown ol {
+  @apply mt-4 list-decimal space-y-2 pl-6 text-[15px] leading-8 text-slate;
+}
+
+.markdown blockquote {
+  @apply mt-5 border-l-2 border-accent/60 bg-white/[0.03] px-4 py-3 text-sm italic text-sand-2;
+}
+
+.markdown code {
+  @apply rounded-md border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-xs text-sand-2;
+}
+
+.markdown pre {
+  @apply mt-5 overflow-x-auto rounded-2xl border border-white/10 bg-[#0b1220] p-4 text-xs text-sand-2;
+}
+
+.markdown a {
+  @apply text-accent underline decoration-accent/40 underline-offset-4;
+}
+
+.markdown hr {
+  @apply my-8 border-white/10;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
