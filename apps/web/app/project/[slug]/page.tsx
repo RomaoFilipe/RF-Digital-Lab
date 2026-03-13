@@ -1,38 +1,100 @@
-import Link from 'next/link';
+import { Metadata } from 'next';
+import { notFound, redirect } from 'next/navigation';
 import { getApiBaseUrl } from '../../../lib/api';
-import { ContentItem } from '../../../lib/types';
-import { Badge } from '../../../components/ui/badge';
-import { Button } from '../../../components/ui/button';
-import { CopyLinkButton } from '../../../components/CopyLinkButton';
+import { ContentItem, ShowcaseFeature, ShowcaseItem } from '../../../lib/types';
 import { estimateReadingTime } from '../../../lib/readingTime';
 import { parseCaseStudySections } from '../../../lib/case-study';
-import { renderMarkdown } from '../../../lib/markdown';
-import { ProjectCard } from '../../../components/ProjectCard';
+import { ProjectHero } from '../../../components/project/ProjectHero';
+import { ProjectTechnologies } from '../../../components/project/ProjectTechnologies';
+import { ProjectOverview } from '../../../components/project/ProjectOverview';
+import { ProjectFeatures } from '../../../components/project/ProjectFeatures';
+import { ProjectGallery } from '../../../components/project/ProjectGallery';
+import { ProjectVideoDemo } from '../../../components/project/ProjectVideoDemo';
+import { ProjectArchitecture } from '../../../components/project/ProjectArchitecture';
+import { ProjectStats } from '../../../components/project/ProjectStats';
+import { ProjectLinks } from '../../../components/project/ProjectLinks';
+import { ProjectChallenges } from '../../../components/project/ProjectChallenges';
+import { RelatedProjects } from '../../../components/project/RelatedProjects';
+import { ProjectCTA } from '../../../components/project/ProjectCTA';
+import { ProjectViewTracker } from '../../../components/project/ProjectViewTracker';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 async function getProject(slug: string) {
   const base = getApiBaseUrl();
-  const res = await fetch(`${base}/content/${slug}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Project not found');
+  const endpoint = UUID_RE.test(slug) ? `/content/public-id/${slug}` : `/content/${slug}`;
+  const res = await fetch(`${base}${endpoint}`, { cache: 'no-store' });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('Failed to load project');
   return res.json() as Promise<ContentItem>;
 }
 
-async function getRelatedProjects(item: ContentItem) {
-  const tags = item.tags?.map((entry) => entry.tag.slug).filter(Boolean) ?? [];
-  if (!tags.length) return [];
+function fromCsv(raw?: string | null): ShowcaseItem[] {
+  return (raw || '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => ({
+      name: entry,
+      slug: entry
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, ''),
+    }));
+}
 
+function featureFromCsv(raw?: string | null): ShowcaseFeature[] {
+  return (raw || '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => ({
+      name: entry,
+      icon: 'bolt',
+    }));
+}
+
+async function getRelatedProjects(item: ContentItem) {
   const base = getApiBaseUrl();
-  const params = new URLSearchParams({
-    tags: tags.join(','),
-    limit: '6',
-  });
-  const res = await fetch(`${base}/content?${params.toString()}`, { cache: 'no-store' });
+  const tech = item.showcase?.techSlugs?.slice(0, 4) || [];
+  const tagSlugs = item.tags?.map((entry) => entry.tag.slug).filter(Boolean) ?? [];
+  const query = new URLSearchParams({ limit: '8' });
+  if (tech.length) query.set('tech', tech.join(','));
+  else if (tagSlugs.length) query.set('tags', tagSlugs.join(','));
+  else return [];
+
+  const res = await fetch(`${base}/content?${query.toString()}`, { cache: 'no-store' });
   if (!res.ok) return [];
-  const json = await res.json() as { items: ContentItem[] };
+  const json = (await res.json()) as { items: ContentItem[] };
   return json.items.filter((candidate) => candidate.id !== item.id).slice(0, 3);
 }
 
-export default async function ProjectDetail({ params }: { params: { slug: string } }) {
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const item = await getProject(params.slug);
+  if (!item) {
+    return {
+      title: 'Project not found',
+    };
+  }
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  return {
+    title: item.seoTitle || item.title,
+    description: item.seoDescription || item.summary || undefined,
+    alternates: {
+      canonical: `${siteUrl}/project/${item.slug}`,
+    },
+  };
+}
+
+export default async function ProjectDetailPage({ params }: { params: { slug: string } }) {
+  const item = await getProject(params.slug);
+  if (!item) notFound();
+  if (UUID_RE.test(params.slug) && item.slug !== params.slug) {
+    redirect(`/project/${item.slug}`);
+  }
+
   const base = getApiBaseUrl();
   const relatedProjects = await getRelatedProjects(item);
   const caseStudy = parseCaseStudySections(item.content || '');
@@ -41,187 +103,77 @@ export default async function ProjectDetail({ params }: { params: { slug: string
       ? item.articleDetails?.readingTime ?? estimateReadingTime(item.content || '')
       : null;
 
+  const galleryItems = item.gallery?.map((entry) => ({
+    src: `${base}${entry.media.path}`,
+    alt: entry.media.originalName || item.title,
+  })) || [];
+
+  const technologies = item.showcase?.technologies?.length
+    ? item.showcase.technologies
+    : fromCsv(item.devDetails?.stack);
+  const tools = item.showcase?.tools || [];
+  const software = item.showcase?.software?.length
+    ? item.showcase.software
+    : fromCsv(item.threeDDetails?.software);
+  const features = item.showcase?.features?.length
+    ? item.showcase.features
+    : featureFromCsv(item.devDetails?.highlights);
+
   return (
-    <div className="container py-16">
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge>{item.type}</Badge>
-          {item.year ? <Badge variant="outline">{item.year}</Badge> : null}
-          {item.tags?.map((t) => (
-            <Link key={t.tag.id} href={`/projects?tags=${t.tag.slug}`}>
-              <Badge variant="outline">{t.tag.name}</Badge>
-            </Link>
-          ))}
-          {caseStudy.hasCaseStudy ? <Badge variant="outline">Case Study</Badge> : null}
-          {readingTime ? (
-            <Badge variant="outline">
-              Tempo estimado: {readingTime} min
-            </Badge>
-          ) : null}
+    <div className="container py-12 md:py-16">
+      <div className="mx-auto w-full max-w-6xl">
+        <ProjectViewTracker slug={item.slug} apiBase={base} />
+
+        <ProjectHero item={item} readingTime={readingTime} />
+
+        {item.coverMedia ? (
+          <div className="mt-8 overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.03] shadow-lift">
+            <img
+              src={`${base}${item.coverMedia.path}`}
+              alt={item.title}
+              className="h-72 w-full object-cover md:h-96"
+            />
+          </div>
+        ) : null}
+
+        <div className="mt-10 grid min-w-0 gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+          <div className="min-w-0 space-y-8">
+            <ProjectTechnologies
+              technologies={technologies}
+              tools={tools}
+              software={software}
+            />
+            <ProjectOverview markdown={item.content || ''} caseStudy={caseStudy} />
+            <ProjectFeatures features={features} />
+            <ProjectGallery items={galleryItems} />
+            <ProjectVideoDemo
+              demoUrl={item.showcase?.demoUrl}
+              videoUrl={item.showcase?.videoUrl}
+              videoProvider={item.showcase?.videoProvider}
+              videoAsset={item.showcase?.videoAsset}
+              videoAssetSrc={item.showcase?.videoAsset ? `${base}${item.showcase.videoAsset.path}` : null}
+            />
+            <ProjectArchitecture items={item.showcase?.architecture} />
+            <ProjectStats items={item.showcase?.stats} />
+            <ProjectChallenges
+              challenges={item.showcase?.challenges}
+              learnings={item.showcase?.learnings}
+            />
+          </div>
+
+          <aside className="min-w-0 space-y-6 lg:sticky lg:top-6 lg:self-start">
+            <ProjectLinks
+              items={item.showcase?.links}
+              repoUrl={item.devDetails?.repoUrl}
+              liveUrl={item.devDetails?.liveUrl || item.showcase?.demoUrl}
+              canonicalUrl={item.articleDetails?.canonicalUrl}
+              publicationUrl={item.publicationDetails?.postUrl}
+            />
+            <ProjectCTA />
+          </aside>
         </div>
-        <h1 className="font-display text-5xl tracking-tight text-white md:text-6xl">{item.title}</h1>
-        {item.summary ? <p className="max-w-3xl text-lg leading-8 text-slate">{item.summary}</p> : null}
+        <RelatedProjects items={relatedProjects} imageBase={base} />
       </div>
-
-      {item.coverMedia ? (
-        <div className="mt-8 overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.03] shadow-lift">
-          <img
-            src={`${base}${item.coverMedia.path}`}
-            alt={item.title}
-            className="h-96 w-full object-cover"
-          />
-        </div>
-      ) : null}
-
-      <div className="mt-10 grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-8">
-          {caseStudy.hasCaseStudy ? (
-            <>
-              <section>
-                <h2 className="font-display text-2xl">Desafio</h2>
-                <article
-                  className="markdown mt-4"
-                  dangerouslySetInnerHTML={{ __html: caseStudy.challengeHtml }}
-                />
-              </section>
-              <section>
-                <h2 className="font-display text-2xl">Processo</h2>
-                <article
-                  className="markdown mt-4"
-                  dangerouslySetInnerHTML={{ __html: caseStudy.processHtml }}
-                />
-              </section>
-              <section>
-                <h2 className="font-display text-2xl">Resultado</h2>
-                <article
-                  className="markdown mt-4"
-                  dangerouslySetInnerHTML={{ __html: caseStudy.resultHtml }}
-                />
-              </section>
-              {caseStudy.restHtml ? (
-                <section className="panel p-8">
-                  <h2 className="font-display text-2xl">Notas</h2>
-                  <article
-                    className="markdown mt-4"
-                    dangerouslySetInnerHTML={{ __html: caseStudy.restHtml }}
-                  />
-                </section>
-              ) : null}
-            </>
-          ) : (
-            <section className="panel p-8">
-              <h2 className="font-display text-2xl">Overview</h2>
-              <article
-                className="markdown mt-4"
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(item.content || '') }}
-              />
-            </section>
-          )}
-
-          {item.gallery?.length ? (
-            <section className="panel p-8">
-              <h2 className="font-display text-2xl">Gallery</h2>
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                {item.gallery.map((g) => (
-                  <img
-                    key={g.media.id}
-                    src={`${base}${g.media.path}`}
-                    alt={g.media.originalName}
-                    className="h-56 w-full rounded-2xl border border-white/10 object-cover"
-                  />
-                ))}
-              </div>
-            </section>
-          ) : null}
-        </div>
-
-        <aside className="space-y-6">
-          <div className="panel p-6">
-            <h3 className="font-display text-xl text-white">Share</h3>
-            <p className="mt-2 text-sm text-slate">Copy the public URL for this project.</p>
-            <div className="mt-4">
-              <CopyLinkButton />
-            </div>
-          </div>
-          <div className="panel p-6">
-            <h3 className="font-display text-xl text-white">Details</h3>
-            <div className="mt-4 space-y-3 text-sm">
-              {item.videoDetails?.youtubeUrl ? (
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate">YouTube</p>
-                  <a href={item.videoDetails.youtubeUrl} className="text-accent" target="_blank" rel="noreferrer">
-                    Ver vídeo
-                  </a>
-                </div>
-              ) : null}
-              {item.videoDetails?.vimeoUrl ? (
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate">Vimeo</p>
-                  <a href={item.videoDetails.vimeoUrl} className="text-accent" target="_blank" rel="noreferrer">
-                    Ver vídeo
-                  </a>
-                </div>
-              ) : null}
-              {item.devDetails?.repoUrl ? (
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate">Repo</p>
-                  <a href={item.devDetails.repoUrl} className="text-accent" target="_blank" rel="noreferrer">
-                    Abrir repositório
-                  </a>
-                </div>
-              ) : null}
-              {item.devDetails?.liveUrl ? (
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate">Live</p>
-                  <a href={item.devDetails.liveUrl} className="text-accent" target="_blank" rel="noreferrer">
-                    Ver site
-                  </a>
-                </div>
-              ) : null}
-              {item.devDetails?.stack ? (
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate">Stack</p>
-                  <p>{item.devDetails.stack}</p>
-                </div>
-              ) : null}
-              {item.articleDetails?.canonicalUrl ? (
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-slate">Artigo</p>
-                  <a href={item.articleDetails.canonicalUrl} className="text-accent" target="_blank" rel="noreferrer">
-                    Ler artigo
-                  </a>
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-accent/20 bg-[#08111f] p-6">
-            <h3 className="font-display text-xl text-white">Need something similar?</h3>
-            <p className="mt-3 text-sm leading-7 text-slate">
-              I can help design and build the next public-facing product, admin system or technical portfolio.
-            </p>
-            <Button asChild size="sm" className="mt-4">
-              <Link href="/contact">Contact</Link>
-            </Button>
-          </div>
-        </aside>
-      </div>
-
-      {relatedProjects.length ? (
-        <section className="mt-16">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="eyebrow">Related</p>
-              <h2 className="mt-2 font-display text-3xl text-white">Related projects</h2>
-            </div>
-          </div>
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {relatedProjects.map((related) => (
-              <ProjectCard key={related.id} item={related} imageBase={base} />
-            ))}
-          </div>
-        </section>
-      ) : null}
     </div>
   );
 }

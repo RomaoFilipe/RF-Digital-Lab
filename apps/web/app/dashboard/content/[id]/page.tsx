@@ -10,8 +10,11 @@ export default async function EditContentPage({ params }: { params: { id: string
   const item = await getContent(params.id);
 
   return (
-    <div className="space-y-6">
-      <h1 className="font-display text-3xl">Editar Conteúdo</h1>
+    <div className="mx-auto w-full max-w-6xl space-y-6 pb-10">
+      <div>
+        <p className="eyebrow">Editor</p>
+        <h1 className="font-display text-3xl">Editar Conteúdo</h1>
+      </div>
       <ContentForm mode="edit" initial={item} />
     </div>
   );

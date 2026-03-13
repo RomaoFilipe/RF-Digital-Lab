@@ -30,6 +30,13 @@ enum MediaKind {
   FILE
 }
 
+enum VideoProvider {
+  YOUTUBE
+  VIMEO
+  LOCAL
+  NONE
+}
+
 model AdminUser {
   id           Int      @id @default(autoincrement())
   email        String   @unique
@@ -51,6 +58,7 @@ model MediaAsset {
   createdAt    DateTime       @default(now())
   usedAsCover  ContentItem[]  @relation("CoverMedia")
   galleryItems ContentMedia[]
+  showcaseVideoItems ProjectShowcase[] @relation("ShowcaseVideoAsset")
 }
 
 model ContentItem {
@@ -75,9 +83,38 @@ model ContentItem {
   threeDDetails   ThreeDDetails?
   articleDetails  ArticleDetails?
   publicationDetails PublicationDetails?
+  showcase        ProjectShowcase?
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
   publishedAt     DateTime?
+}
+
+model ProjectShowcase {
+  id                  String        @id @default(uuid())
+  contentId           String        @unique
+  content             ContentItem   @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  technologies        Json?
+  tools               Json?
+  software            Json?
+  features            Json?
+  architecture        Json?
+  stats               Json?
+  links               Json?
+  challenges          Json?
+  learnings           Json?
+  techSlugs           String[]      @default([])
+  demoUrl             String?
+  videoUrl            String?
+  videoProvider       VideoProvider @default(NONE)
+  videoAssetId        String?
+  videoAsset          MediaAsset?   @relation("ShowcaseVideoAsset", fields: [videoAssetId], references: [id], onDelete: SetNull)
+  views               Int           @default(0)
+  teamSize            Int?
+  developmentTimeDays Int?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([techSlugs])
 }
 
 model ContentMedia {

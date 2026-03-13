@@ -12,7 +12,15 @@ import { testimonialsContent } from '../lib/content/testimonials';
 async function getFeatured() {
   const base = getApiBaseUrl();
   const res = await fetch(`${base}/content?featured=true&limit=6`, { cache: 'no-store' });
-  if (!res.ok) return { items: [] } as Paginated<ContentItem>;
+  if (!res.ok) {
+    return {
+      items: [],
+      page: 1,
+      limit: 6,
+      total: 0,
+      totalPages: 0,
+    } satisfies Paginated<ContentItem>;
+  }
   return res.json() as Promise<Paginated<ContentItem>>;
 }
 

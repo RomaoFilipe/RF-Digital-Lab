@@ -172,7 +172,7 @@ export default function MediaPage() {
           </select>
         </div>
         <div className="flex gap-2">
-          <Button type="button" size="sm" variant="outline" onClick={load}>
+          <Button type="button" size="sm" variant="outline" onClick={() => { void load(); }}>
             Apply filters
           </Button>
           <Button

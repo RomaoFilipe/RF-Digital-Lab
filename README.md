@@ -42,11 +42,18 @@ Exemplos:
 - `/projects`
 - `/projects?tab=video`
 - `/projects?tab=dev&tags=nextjs,prisma&year=2026&search=dashboard&featured=true&sort=newest&page=1&limit=12`
+- `/projects?tech=nextjs`
+
+## Rotas de detalhe
+- Canónica: `/project/[slug]`
+- Alias: `/projects/[id]` (UUID ou slug), com redirect para rota canónica
 
 ## Endpoints principais
 Público:
 - `GET /content`
 - `GET /content/:slug`
+- `GET /content/public-id/:id`
+- `POST /content/:slug/view`
 - `GET /tags`
 - `GET /settings`
 - `GET /uploads/*`
@@ -57,6 +64,7 @@ Admin (protegido):
 - `GET /auth/me`
 - `POST /content`
 - `PATCH /content/:id`
+- `PATCH /content/:id/showcase`
 - `DELETE /content/:id`
 - `GET /content/admin/list`
 - `GET /content/admin/:id`
@@ -112,3 +120,4 @@ docker compose exec api npm run prisma:migrate
 - Admin tem acesso a `DRAFT/PUBLISHED/ARCHIVED`.
 - Slug é auto-gerado e pode ser editado.
 - Types MVP implementados: DEV, VIDEO, ARTICLE.
+- `ProjectShowcase` (1:1) guarda tecnologias, tools/software, features, arquitetura, stats, links, desafios e learnings.

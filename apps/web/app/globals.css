@@ -8,10 +8,12 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
   @apply bg-[#060816] text-white font-body antialiased;
+  overflow-x: clip;
   background-image:
     linear-gradient(rgba(56, 189, 248, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(56, 189, 248, 0.06) 1px, transparent 1px),
@@ -33,6 +35,20 @@ body::before {
   z-index: -1;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+video,
+iframe,
+canvas,
+svg {
+  max-width: 100%;
+}
+
 a {
   @apply text-sand-2 transition-colors hover:text-accent;
 }
@@ -50,7 +66,7 @@ a {
 }
 
 .panel {
-  @apply rounded-2xl border border-white/10 bg-white/[0.03] shadow-soft backdrop-blur-sm;
+  @apply rounded-2xl border border-white/10 bg-white/[0.03] shadow-soft backdrop-blur-sm overflow-hidden;
 }
 
 .panel-muted {
@@ -62,7 +78,7 @@ a {
 }
 
 .markdown {
-  @apply text-slate;
+  @apply break-words text-slate;
 }
 
 .markdown h1 {
@@ -78,19 +94,25 @@ a {
 }
 
 .markdown p {
-  @apply mt-4 text-[15px] leading-8 text-slate;
+  @apply mt-4 break-words text-[15px] leading-8 text-slate;
+  overflow-wrap: anywhere;
 }
 
 .markdown ul {
-  @apply mt-4 list-disc space-y-2 pl-6 text-[15px] leading-8 text-slate;
+  @apply mt-4 list-disc space-y-2 break-words pl-6 text-[15px] leading-8 text-slate;
 }
 
 .markdown ol {
-  @apply mt-4 list-decimal space-y-2 pl-6 text-[15px] leading-8 text-slate;
+  @apply mt-4 list-decimal space-y-2 break-words pl-6 text-[15px] leading-8 text-slate;
 }
 
 .markdown blockquote {
-  @apply mt-5 border-l-2 border-accent/60 bg-white/[0.03] px-4 py-3 text-sm italic text-sand-2;
+  @apply mt-5 break-words border-l-2 border-accent/60 bg-white/[0.03] px-4 py-3 text-sm italic text-sand-2;
+}
+
+.text-wrap-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .markdown code {

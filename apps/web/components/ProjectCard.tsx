@@ -68,6 +68,15 @@ export function ProjectCard({
             ))}
           </div>
         ) : null}
+        {item.showcase?.technologies?.length ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {item.showcase.technologies.slice(0, 4).map((tech) => (
+              <Badge key={`tech-${tech.slug || tech.name}`} variant="outline">
+                {tech.name}
+              </Badge>
+            ))}
+          </div>
+        ) : null}
         <div className="mt-6 flex items-center gap-3">
           <Button asChild size="sm">
             <Link href={`/project/${item.slug}`}>Open case</Link>

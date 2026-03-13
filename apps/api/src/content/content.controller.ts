@@ -3,6 +3,7 @@ import { ContentService } from './content.service';
 import { CreateContentDto } from './dto/create-content.dto';
 import { UpdateContentDto } from './dto/update-content.dto';
 import { AuthGuard } from '../auth/auth.guard';
+import { ProjectShowcaseDto } from './dto/project-showcase.dto';
 
 @Controller('content')
 export class ContentController {
@@ -37,6 +38,16 @@ export class ContentController {
     return this.service.duplicate(id);
   }
 
+  @Get('public-id/:id')
+  getPublicById(@Param('id') id: string) {
+    return this.service.getPublicById(id);
+  }
+
+  @Post(':slug/view')
+  incrementView(@Param('slug') slug: string) {
+    return this.service.incrementView(slug);
+  }
+
   @Get(':slug')
   getPublic(@Param('slug') slug: string) {
     return this.service.getPublicBySlug(slug);
@@ -52,6 +63,12 @@ export class ContentController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateContentDto) {
     return this.service.update(id, dto);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch(':id/showcase')
+  updateShowcase(@Param('id') id: string, @Body() dto: ProjectShowcaseDto) {
+    return this.service.upsertShowcase(id, dto);
   }
 
   @UseGuards(AuthGuard)

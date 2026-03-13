@@ -52,6 +52,11 @@ export function ProjectFilters() {
     .map((t) => t.trim())
     .filter(Boolean);
 
+  const activeTech = (params.get('tech') || '')
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean);
+
   const activeFilters = [
     params.get('search') ? { label: `Search: ${params.get('search')}`, key: 'search' } : null,
     params.get('year') ? { label: `Ano: ${params.get('year')}`, key: 'year' } : null,
@@ -77,11 +82,16 @@ export function ProjectFilters() {
         ))}
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-5">
+      <div className="mt-6 grid gap-4 md:grid-cols-6">
         <Input
           placeholder="Search"
           defaultValue={params.get('search') ?? ''}
           onBlur={(e) => setParam('search', e.target.value || null)}
+        />
+        <Input
+          placeholder="Tech (csv)"
+          defaultValue={params.get('tech') ?? ''}
+          onBlur={(e) => setParam('tech', e.target.value || null)}
         />
         <Input
           placeholder="Tags (csv)"
@@ -112,7 +122,7 @@ export function ProjectFilters() {
         </label>
       </div>
 
-      {(activeTags.length || activeFilters.length || currentTab !== 'all') && (
+      {(activeTags.length || activeTech.length || activeFilters.length || currentTab !== 'all') && (
         <div className="mt-6 flex flex-wrap items-center gap-2">
           {currentTab !== 'all' && (
             <Badge variant="outline" className="flex items-center gap-2">
@@ -124,6 +134,21 @@ export function ProjectFilters() {
             <Badge key={tag} variant="outline" className="flex items-center gap-2">
               {tag}
               <button type="button" onClick={() => removeTag(tag)} className="text-[10px]">×</button>
+            </Badge>
+          ))}
+          {activeTech.map((tech) => (
+            <Badge key={`tech-${tech}`} variant="outline" className="flex items-center gap-2">
+              tech:{tech}
+              <button
+                type="button"
+                onClick={() => {
+                  const nextTech = activeTech.filter((item) => item !== tech);
+                  setParam('tech', nextTech.length ? nextTech.join(',') : null);
+                }}
+                className="text-[10px]"
+              >
+                ×
+              </button>
             </Badge>
           ))}
           {activeFilters.map((filter) => (

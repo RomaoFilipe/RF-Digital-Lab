@@ -12,14 +12,14 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}) {
   const url = `${base}${path}`;
 
   const isServer = typeof window === 'undefined';
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
-  };
+  const headers = new Headers(options.headers);
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
 
   if (isServer) {
     const cookieHeader = cookies().toString();
-    if (cookieHeader) headers.cookie = cookieHeader;
+    if (cookieHeader) headers.set('cookie', cookieHeader);
   }
 
   const res = await fetch(url, {
